@@ -1,0 +1,160 @@
+깃허브 데스크 탑
+프로젝트 삭제 및 다운로드
+
+유니티 Enemy 완성
+오브젝트 풀링해서 Spawn 하기
+나머지 적 캐릭터를 이용해서 똑같이 만들어 보기
+
+
+
+커랜트 오리진 들어가서 -> 작업중인 프로젝트 선택후 ->
+파일경로 선택 ex) MyGitHub -> 완료하면 파일 생성됨
+
+
+
+리액트 유니티 프로젝트 업로드 다운로드 
+Checkout Br
+
+캐릭터 컨트롤러 를 사용시 리지디 바디 저용 금지
+캐릭터가 가라 앉음
+계단 올라가거나 간단한 충돌 감지에 특화됨
+
+곡면보간 함수(Quaternion)
+Mathf.Lerp - 직선보간 함수
+
+아바타 마스크를 이용해 상체만 애니메이션을 딴다
+서있는 상테에서 창 돌리는것과 기마 상태일때 창돌리는것을
+하체만 빼고 상체만 아바타 마스트를 이용해 따온다
+
+Reload 기능 구현 - 레이어 분리 
+아바타 마스크 (Avatar Mask)
+
+FK - 관절이 순서대로 움직인다 
+IK - 역 운동학, 게임에만 있음, 관절이 역방향으로 움직인다
+무기 중심으로 움직인다
+
+애니메이터 레이어
+Weight 속성은 바로 위 Base Movement Layer 와 어느정도 
+블랜딩 될것인지 결정하는 속성이다
+Base Movement Layer와 전혀 다른 부위의 애니메이션 이므로
+1로 설정했다 (다르게 설정한것, 홉합해서 하지 않겠다는것)
+이 속성을 낮추면 Base Movement Layer의 기존 애니메이션과
+블랜딩 되어 어색한 동작이 된다
+
+Mask - 아바타 마스크 연결 속성
+
+Blending옵션 - override 와  Additive 가 있는데 
+override는 Weight 속성값에 따라 블랜딩 하는 것이고
+Additive는 Base Movement Layer 애니메이션에 추가해서 
+실행하는 옵션이다
+
+
+죽은후에 물리력 제거 밀려나가는거 방지
+GetComponent<Rigidbody>().isKinematic = true;
+
+Swat중에 캐릭터 골라서 
+Enemy하고 똑같이 만들기
+Player Reload 10발 쏘면 리로드 되게 만들기
+
+
+
+
+TPSMecanimCtrl 참고
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class TPSMecanimCtrl : MonoBehaviour
+{
+    public TPSPlayerInput input;
+    private Transform tr;
+    private Animator anim;
+    private Rigidbody rb;
+    private float speed = 7f;
+    private float maxSpeed = 10f;
+    private float rotseed = 200f;
+    public bool isRun = false;
+    private readonly int hashPosX = Animator.StringToHash("PosX");
+    private readonly int hashPosY = Animator.StringToHash("PosY");
+    private readonly int hashSprint = Animator.StringToHash("IsSprint");
+    void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+        input = GetComponent<TPSPlayerInput>();
+        tr = GetComponent<Transform>();
+        anim = GetComponent<Animator>();
+    }
+
+    void Update()
+    {
+        if (input.sprint)
+        {
+            speed = 10f;
+            isRun = true;
+        }
+        else
+        {
+            speed = 5f;
+            isRun = false;
+        }
+        
+
+        anim.SetFloat(hashPosX, input.moveX, 0.01f, Time.deltaTime);
+        anim.SetFloat(hashPosY, input.moveZ, 0.01f, Time.deltaTime);
+        anim.SetBool(hashSprint, isRun);
+    }
+    private void FixedUpdate() //정확한 물리량에 따른 구현이나 정확한 프레임대로 구현 하고 싶다면
+    {
+        Vector3 moveDir = (Vector3.forward * input.moveZ) + (Vector3.right * input.moveX);
+         tr.Translate(moveDir.normalized * speed * Time.fixedDeltaTime);
+         tr.Rotate(Vector3.up * input.mouseRotate * Time.fixedDeltaTime * rotseed);
+        //rb.MovePosition(rb.position +  moveDir * speed * Time.fixedDeltaTime);
+        #region --- 새로운 회전 로직 (New Rotation Logic) ---
+
+        // 1. 이번 FixedUpdate에서 회전할 양(각도)을 계산합니다.
+        // 물리 업데이트이므로 Time.fixedDeltaTime을 사용합니다.
+        //float turn = input.mouseRotate * rotseed * Time.fixedDeltaTime;
+
+        // 2. 이 회전량을 Quaternion 형태로 만듭니다. (Y축 기준 회전)
+        //Quaternion deltaRotation = Quaternion.Euler(Vector3.up * turn);
+
+        // 3. 현재 회전값(rb.rotation)에 회전량을 곱하여 최종 목표 회전값을 계산합니다.
+        //Quaternion targetRotation = rb.rotation * deltaRotation;
+
+        // 4. Rigidbody를 계산된 목표 회전값으로 물리적으로 안전하게 회전시킵니다.
+        //rb.MoveRotation(targetRotation);
+
+        //if (rb.velocity.magnitude > maxSpeed)
+        //{
+        //    // 속도를 최대 속도로 제한
+        //    rb.velocity = rb.velocity.normalized * maxSpeed;
+        //}
+        #endregion
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
